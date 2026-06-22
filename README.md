@@ -6,8 +6,9 @@ scoring it against the official **Excellence (50%) / Impact (30%) / Implementati
 criteria, producing a **weighted percentage grade**, and returning a prioritised list of
 **what is missing and what to improve**.
 
-Part of [ClawBioCrop](https://github.com/jdetras/clawbiocrop). Self-contained: pure Python
-standard library, no third-party dependencies.
+Part of [ClawBioCrop](https://github.com/jdetras/clawbiocrop). Self-contained: the panel,
+the **Word/PDF parser** and the **web UI** all run on the pure Python standard library — no
+third-party packages required (PDF reading is the one optional extra, see below).
 
 ## The panel
 
@@ -23,8 +24,8 @@ standard library, no third-party dependencies.
 ## Quick start
 
 ```bash
-# Score a proposal draft (Part B sections 1-3, or a full draft, as .md/.txt)
-python msca_reviewer.py --input proposal.md --output report_dir
+# Score a proposal draft — accepts .md, .txt, .docx or .pdf
+python msca_reviewer.py --input proposal.docx --output report_dir
 
 # No file yet? Run the built-in synthetic demo
 python msca_reviewer.py --demo --output /tmp/msca_demo
@@ -32,6 +33,28 @@ python msca_reviewer.py --demo --output /tmp/msca_demo
 
 Outputs `report.md` (human-readable scorecards + feedback) and `result.json`
 (machine-readable scores, weighted breakdown and improvement plan).
+
+## Web UI
+
+Prefer a browser? Launch the built-in local web app, open the link, drop in a
+proposal file and read the graded report on the page:
+
+```bash
+python app.py            # → http://127.0.0.1:8000
+python app.py --port 9000
+```
+
+The server is standard-library only and runs **entirely on your machine** — proposals
+are processed locally and never uploaded anywhere.
+
+## Supported proposal formats
+
+| Format | Support |
+|---|---|
+| `.md`, `.markdown`, `.txt` | ✅ built-in |
+| `.docx` (Word) | ✅ built-in (parsed via stdlib `zipfile` — no Word/`python-docx` needed) |
+| `.pdf` | ✅ with an optional engine: `pip install pypdf` (or `pdfminer.six`) |
+| `.doc` (legacy binary) | ❌ — re-save as `.docx` or PDF first |
 
 ```
 $ python msca_reviewer.py --demo --output /tmp/msca_demo
@@ -57,7 +80,7 @@ set of curated evaluator tips with sources. Update it each call cycle.
 ## Tests
 
 ```bash
-pip install pytest
+pip install pytest      # plus optional 'pypdf' to exercise the PDF path
 pytest tests/
 ```
 

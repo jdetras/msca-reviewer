@@ -7,7 +7,7 @@ description: >-
   list of what is missing and what to improve.
 license: MIT
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
   author: ClawBioCrop
   domain: research-grants
   tags:
@@ -22,7 +22,9 @@ metadata:
       format:
         - md
         - txt
-      description: The proposal text (Part B sections 1-3, or full draft) as markdown/plain text
+        - docx
+        - pdf
+      description: The proposal (Part B sections 1-3, or full draft) as markdown, plain text, Word .docx or PDF
       required: false
   outputs:
     - name: report
@@ -38,6 +40,8 @@ metadata:
   dependencies:
     python: ">=3.10"
     packages: []
+    optional_packages:
+      - pypdf      # only needed to read PDF proposals (.docx/.md/.txt need nothing)
   demo_data:
     - path: examples/demo_proposal.md
       description: Synthetic strong MSCA-PF proposal (rice drought genomics)
@@ -45,6 +49,7 @@ metadata:
       description: Synthetic weak proposal for contrast
   endpoints:
     cli: python skills/msca-reviewer/msca_reviewer.py --input {proposal} --output {output_dir}
+    web: python skills/msca-reviewer/app.py
   openclaw:
     requires:
       bins:
@@ -106,6 +111,8 @@ the applicant exactly **what is missing and what to improve**.
    and applies the 70% funding threshold + ~90% competitiveness target.
 3. **Feedback agent** — gap analysis + a prioritised improvement plan ranked by the
    weighted points each fix can recover.
+4. **Any-format intake + web UI** — accepts `.md`/`.txt`/`.docx`/`.pdf` proposals and
+   offers a dependency-free local browser app (`app.py`) for upload-and-grade.
 
 ## The Panel (several reviewer agents)
 
@@ -125,17 +132,23 @@ It does not write the proposal and does not review non-MSCA schemes.
 
 ## Input Formats
 
-| Format | Extension | Required Fields | Example |
-|--------|-----------|-----------------|---------|
-| Proposal text | `.md` / `.txt` | Sections 1 (Excellence), 2 (Impact), 3 (Implementation) | `examples/demo_proposal.md` |
+| Format | Extension | Notes | Example |
+|--------|-----------|-------|---------|
+| Markdown / plain text | `.md` / `.markdown` / `.txt` | built-in | `examples/demo_proposal.md` |
+| Word document | `.docx` | parsed with the stdlib (no `python-docx` / Word needed) | — |
+| PDF | `.pdf` | needs `pip install pypdf` (or `pdfminer.six`) | — |
+| Legacy Word | `.doc` | **not supported** — re-save as `.docx`/PDF | — |
 
+Each should contain Sections 1 (Excellence), 2 (Impact), 3 (Implementation).
 If the user has no file: **run `--demo`** immediately (mandatory demo fallback).
 
 ## Workflow
 
 When the user asks for an MSCA review:
 
-1. **Validate**: Read the proposal text. If none, run `--demo` with the synthetic proposal.
+1. **Validate**: Read the proposal via `read_proposal()` (auto-detects `.md`/`.txt`/`.docx`/
+   `.pdf`). If none, run `--demo` with the synthetic proposal. For an interactive,
+   browser-based experience, point the user at `python app.py` (local web UI).
 2. **Panel review**: Each reviewer agent scores its criterion's sub-aspects 0–5 from the
    rubric in `rules/msca_rules.json` (evidence detection + required-element checks).
 3. **Compliance**: Estimate page count vs the 10-page limit; flag missing ethics/open
@@ -150,11 +163,15 @@ When the user asks for an MSCA review:
 ## CLI Reference
 
 ```bash
-# Review a proposal draft
-python skills/msca-reviewer/msca_reviewer.py --input proposal.md --output report_dir
+# Review a proposal draft (.md / .txt / .docx / .pdf)
+python skills/msca-reviewer/msca_reviewer.py --input proposal.docx --output report_dir
 
 # Demo mode (synthetic proposal, no user file needed)
 python skills/msca-reviewer/msca_reviewer.py --demo --output /tmp/msca_demo
+
+# Browser UI — upload a proposal, read the graded report on the page
+python skills/msca-reviewer/app.py            # http://127.0.0.1:8000
+python skills/msca-reviewer/app.py --port 9000
 ```
 
 ## Demo
@@ -219,8 +236,9 @@ output_directory/
 
 ## Dependencies
 
-**Required**: Python ≥3.10 standard library only (no third-party packages).
-**Optional**: none.
+**Required**: Python ≥3.10 standard library only — the panel, the `.docx` parser and the
+web UI (`app.py`, built on `http.server`) need no third-party packages.
+**Optional**: `pypdf` (or `pdfminer.six`) — only to read **PDF** proposals.
 
 ## Gotchas
 
@@ -236,6 +254,16 @@ output_directory/
   table- or figure-heavy proposal may differ — treat the page warning as indicative.
 - **Gotcha 5**: Non-MSCA schemes (ERC, NIH, UKRI) have different criteria; do not apply this
   rubric to them. Refuse and say why.
+- **Gotcha 6**: PDF text extraction needs `pypdf`/`pdfminer.six`. If absent, the parser
+  raises an actionable error rather than guessing — tell the user to `pip install pypdf` or
+  re-save as `.docx`/`.txt`. Scanned/image-only PDFs yield little text (no OCR); warn that a
+  low word count may reflect extraction, not the proposal.
+- **Gotcha 7**: `.docx` is read from `word/document.xml` only — text boxes, headers/footers
+  and embedded objects are not extracted. For a faithful read prefer the body text or a
+  `.md`/`.txt` export. Legacy binary `.doc` is unsupported (re-save as `.docx`).
+- **Gotcha 8**: The web UI (`app.py`) binds to `127.0.0.1` by default — local only.
+  `--host 0.0.0.0` exposes it on the network; only do so on trusted networks since proposals
+  are confidential.
 
 ## Safety
 

@@ -26,6 +26,7 @@ sys.path.insert(0, str(SKILL_DIR))
 from reviewers import (  # noqa: E402
     load_rules,
     parse_proposal,
+    read_proposal,
     ExcellenceReviewer,
     ImpactReviewer,
     ImplementationReviewer,
@@ -149,7 +150,7 @@ def render_report(result: dict, rules: dict, source: str) -> str:
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="MSCA proposal reviewer panel")
-    ap.add_argument("--input", help="Proposal file (markdown/txt)")
+    ap.add_argument("--input", help="Proposal file (markdown/txt/docx/pdf)")
     ap.add_argument("--demo", action="store_true", help="Run with the built-in demo proposal")
     ap.add_argument("--output", required=True, help="Output report directory")
     args = ap.parse_args(argv)
@@ -164,7 +165,10 @@ def main(argv=None):
         path = Path(args.input)
         if not path.exists():
             ap.error(f"input not found: {path}")
-        text = path.read_text(encoding="utf-8", errors="ignore")
+        try:
+            text = read_proposal(path)
+        except (ValueError, RuntimeError) as exc:
+            ap.error(str(exc))
         source = path.name
 
     rules = load_rules()
