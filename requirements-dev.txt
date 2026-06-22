@@ -1,2 +1,3 @@
 pytest
-pypdf>=4.0   # exercises the optional PDF-parsing test (otherwise skipped)
+pypdf>=4.0        # exercises the optional PDF-parsing test (otherwise skipped)
+streamlit>=1.32   # exercises the Streamlit AppTest smoke test (otherwise skipped)

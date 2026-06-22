@@ -1,0 +1,6 @@
+# Runtime deps for the Streamlit app (Streamlit Community Cloud reads this file).
+# The CLI and the stdlib web UI (app.py) need none of these — they are
+# standard-library only. pypdf is included so PDF proposals work on the
+# hosted app.
+streamlit>=1.32
+pypdf>=4.0

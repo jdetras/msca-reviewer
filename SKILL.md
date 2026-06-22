@@ -50,6 +50,7 @@ metadata:
   endpoints:
     cli: python skills/msca-reviewer/msca_reviewer.py --input {proposal} --output {output_dir}
     web: python skills/msca-reviewer/app.py
+    streamlit: streamlit run skills/msca-reviewer/streamlit_app.py
   openclaw:
     requires:
       bins:
@@ -111,8 +112,9 @@ the applicant exactly **what is missing and what to improve**.
    and applies the 70% funding threshold + ~90% competitiveness target.
 3. **Feedback agent** — gap analysis + a prioritised improvement plan ranked by the
    weighted points each fix can recover.
-4. **Any-format intake + web UI** — accepts `.md`/`.txt`/`.docx`/`.pdf` proposals and
-   offers a dependency-free local browser app (`app.py`) for upload-and-grade.
+4. **Any-format intake + web UIs** — accepts `.md`/`.txt`/`.docx`/`.pdf` proposals via a
+   dependency-free local server (`app.py`) and a deployable **Streamlit app**
+   (`streamlit_app.py`, hostable on Streamlit Community Cloud) with upload **or** paste.
 
 ## The Panel (several reviewer agents)
 
@@ -172,6 +174,10 @@ python skills/msca-reviewer/msca_reviewer.py --demo --output /tmp/msca_demo
 # Browser UI — upload a proposal, read the graded report on the page
 python skills/msca-reviewer/app.py            # http://127.0.0.1:8000
 python skills/msca-reviewer/app.py --port 9000
+
+# Streamlit app (deployable on Streamlit Community Cloud)
+pip install -r skills/msca-reviewer/requirements.txt
+streamlit run skills/msca-reviewer/streamlit_app.py
 ```
 
 ## Demo
@@ -237,8 +243,9 @@ output_directory/
 ## Dependencies
 
 **Required**: Python ≥3.10 standard library only — the panel, the `.docx` parser and the
-web UI (`app.py`, built on `http.server`) need no third-party packages.
-**Optional**: `pypdf` (or `pdfminer.six`) — only to read **PDF** proposals.
+local web server (`app.py`, built on `http.server`) need no third-party packages.
+**Optional**: `pypdf` (or `pdfminer.six`) to read **PDF** proposals; `streamlit` for the
+deployable Streamlit app (`streamlit_app.py`). Both are listed in `requirements.txt`.
 
 ## Gotchas
 
@@ -261,9 +268,15 @@ web UI (`app.py`, built on `http.server`) need no third-party packages.
 - **Gotcha 7**: `.docx` is read from `word/document.xml` only — text boxes, headers/footers
   and embedded objects are not extracted. For a faithful read prefer the body text or a
   `.md`/`.txt` export. Legacy binary `.doc` is unsupported (re-save as `.docx`).
-- **Gotcha 8**: The web UI (`app.py`) binds to `127.0.0.1` by default — local only.
+- **Gotcha 8**: The local server (`app.py`) binds to `127.0.0.1` by default — local only.
   `--host 0.0.0.0` exposes it on the network; only do so on trusted networks since proposals
   are confidential.
+- **Gotcha 9**: A **public** Streamlit Community Cloud deployment is reachable by anyone with
+  the URL. Uploaded proposals are processed in-memory (not committed), but do not host
+  confidential/unpublished proposals on a public instance — keep the app private or run it
+  locally for sensitive drafts. The Streamlit entry point must stay named `streamlit_app.py`
+  (or be set explicitly) for Cloud auto-detection, and `requirements.txt` must list
+  `streamlit` (+`pypdf`) or the deploy build will fail.
 
 ## Safety
 

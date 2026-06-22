@@ -6,9 +6,10 @@ scoring it against the official **Excellence (50%) / Impact (30%) / Implementati
 criteria, producing a **weighted percentage grade**, and returning a prioritised list of
 **what is missing and what to improve**.
 
-Part of [ClawBioCrop](https://github.com/jdetras/clawbiocrop). Self-contained: the panel,
-the **Word/PDF parser** and the **web UI** all run on the pure Python standard library — no
-third-party packages required (PDF reading is the one optional extra, see below).
+Part of [ClawBioCrop](https://github.com/jdetras/clawbiocrop). The core panel, the
+**Word/.docx parser** and the **zero-dependency local web server** (`app.py`) run on the
+pure Python standard library. Optional extras: `pypdf` for PDF proposals, and `streamlit`
+for the deployable **Streamlit app** (`streamlit_app.py`).
 
 ## The panel
 
@@ -36,16 +37,37 @@ Outputs `report.md` (human-readable scorecards + feedback) and `result.json`
 
 ## Web UI
 
-Prefer a browser? Launch the built-in local web app, open the link, drop in a
-proposal file and read the graded report on the page:
+Two browser front-ends are included.
+
+### Streamlit app (deployable)
+
+`streamlit_app.py` — upload **or paste** a proposal, get the graded report with metrics,
+tables, scorecards and a Markdown download. Ideal for hosting on **Streamlit Community
+Cloud**.
+
+```bash
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+**Deploy on Streamlit Community Cloud (free):**
+1. Push this repo to GitHub (already done: `jdetras/msca-reviewer`).
+2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app** → sign in with GitHub.
+3. Repo `jdetras/msca-reviewer`, branch `main`, **main file path** `streamlit_app.py`.
+4. **Deploy** — Streamlit installs `requirements.txt` (incl. `pypdf` for PDF support) and
+   gives you a public URL. Pushes to `main` auto-redeploy.
+
+### Zero-dependency local server
+
+`app.py` — standard-library only (`http.server`), no install at all:
 
 ```bash
 python app.py            # → http://127.0.0.1:8000
 python app.py --port 9000
 ```
 
-The server is standard-library only and runs **entirely on your machine** — proposals
-are processed locally and never uploaded anywhere.
+Both run on **your** machine (or your Streamlit instance); proposals are processed
+in-session and not stored.
 
 ## Supported proposal formats
 

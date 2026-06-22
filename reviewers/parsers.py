@@ -73,35 +73,43 @@ def parse_docx(path: Path | str) -> str:
     return html.unescape(text).strip()
 
 
-def parse_pdf(path: Path | str) -> str:
-    """Extract text from a PDF using whichever backend is installed."""
-    path = Path(path)
+def _import_pdf_reader():
+    """Return a callable ``reader(path) -> text`` from the first usable backend.
 
+    Importing an optional backend can fail with more than ImportError (a broken
+    or partial install may raise other errors), so probing is deliberately broad
+    — we just move on to the next backend. Returns None if none are usable.
+    """
     if "pypdf" in _PDF_BACKENDS:
         try:
             from pypdf import PdfReader  # type: ignore
 
-            reader = PdfReader(str(path))
-            return "\n".join((pg.extract_text() or "") for pg in reader.pages).strip()
-        except ImportError:
+            return lambda p: "\n".join((pg.extract_text() or "") for pg in PdfReader(p).pages)
+        except Exception:  # noqa: BLE001 - backend missing/broken; try the next one
             pass
-
     if "PyPDF2" in _PDF_BACKENDS:
         try:
             from PyPDF2 import PdfReader  # type: ignore
 
-            reader = PdfReader(str(path))
-            return "\n".join((pg.extract_text() or "") for pg in reader.pages).strip()
-        except ImportError:
+            return lambda p: "\n".join((pg.extract_text() or "") for pg in PdfReader(p).pages)
+        except Exception:  # noqa: BLE001
             pass
-
     if "pdfminer" in _PDF_BACKENDS:
         try:
             from pdfminer.high_level import extract_text  # type: ignore
 
-            return (extract_text(str(path)) or "").strip()
-        except ImportError:
+            return lambda p: (extract_text(p) or "")
+        except Exception:  # noqa: BLE001
             pass
+    return None
+
+
+def parse_pdf(path: Path | str) -> str:
+    """Extract text from a PDF using whichever backend is installed."""
+    path = Path(path)
+    reader = _import_pdf_reader()
+    if reader is not None:
+        return reader(str(path)).strip()
 
     raise RuntimeError(
         "Reading PDF proposals needs a PDF engine. Install one with:\n"
