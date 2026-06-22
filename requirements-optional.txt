@@ -1,4 +1,11 @@
-# Optional extras. The core panel, the Word/.docx parser and the web UI need
-# nothing beyond the Python standard library. Install this only if you want to
-# review proposals supplied as PDF.
-pypdf>=4.0          # PDF text extraction (alternative: pdfminer.six)
+# Optional extras. The core panel, the Word/.docx parser and the stdlib web UI
+# (app.py) need nothing beyond the Python standard library.
+#
+# PDF (born-digital) proposals:
+pypdf>=4.0          # alternative: pdfminer.six
+#
+# OCR for scanned/image-only PDFs — also needs the system binaries
+# 'tesseract-ocr' and 'poppler-utils' (see packages.txt for Streamlit Cloud):
+pdf2image>=1.17
+pytesseract>=0.3.10
+Pillow>=10.0

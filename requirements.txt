@@ -1,6 +1,9 @@
 # Runtime deps for the Streamlit app (Streamlit Community Cloud reads this file).
 # The CLI and the stdlib web UI (app.py) need none of these — they are
-# standard-library only. pypdf is included so PDF proposals work on the
-# hosted app.
+# standard-library only.
 streamlit>=1.32
-pypdf>=4.0
+pypdf>=4.0          # PDF text extraction (born-digital PDFs)
+# OCR for scanned/image PDFs (needs the system packages in packages.txt too):
+pdf2image>=1.17
+pytesseract>=0.3.10
+Pillow>=10.0

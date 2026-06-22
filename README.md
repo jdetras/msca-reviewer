@@ -54,8 +54,9 @@ streamlit run streamlit_app.py
 1. Push this repo to GitHub (already done: `jdetras/msca-reviewer`).
 2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app** → sign in with GitHub.
 3. Repo `jdetras/msca-reviewer`, branch `main`, **main file path** `streamlit_app.py`.
-4. **Deploy** — Streamlit installs `requirements.txt` (incl. `pypdf` for PDF support) and
-   gives you a public URL. Pushes to `main` auto-redeploy.
+4. **Deploy** — Streamlit installs `requirements.txt` (PDF + OCR libs) and the system
+   binaries in `packages.txt` (`tesseract-ocr`, `poppler-utils`), then gives you a public
+   URL. Pushes to `main` auto-redeploy.
 
 ### Zero-dependency local server
 
@@ -75,8 +76,14 @@ in-session and not stored.
 |---|---|
 | `.md`, `.markdown`, `.txt` | ✅ built-in |
 | `.docx` (Word) | ✅ built-in (parsed via stdlib `zipfile` — no Word/`python-docx` needed) |
-| `.pdf` | ✅ with an optional engine: `pip install pypdf` (or `pdfminer.six`) |
+| `.pdf` (born-digital) | ✅ with an optional engine: `pip install pypdf` (or `pdfminer.six`) |
+| `.pdf` (scanned/image) | ✅ **OCR** — automatic fallback when a PDF has no selectable text (`pip install pdf2image pytesseract` + the `tesseract-ocr`/`poppler-utils` system binaries) |
 | `.doc` (legacy binary) | ❌ — re-save as `.docx` or PDF first |
+
+**OCR:** by default OCR runs *only* when a PDF has no extractable text (so born-digital PDFs
+stay fast). On the Streamlit app a sidebar control lets you force **Always**/**Never** OCR.
+If OCR is unavailable, the parser returns a clear, actionable message rather than failing
+silently.
 
 ```
 $ python msca_reviewer.py --demo --output /tmp/msca_demo

@@ -41,7 +41,10 @@ metadata:
     python: ">=3.10"
     packages: []
     optional_packages:
-      - pypdf      # only needed to read PDF proposals (.docx/.md/.txt need nothing)
+      - pypdf         # read born-digital PDF proposals (.docx/.md/.txt need nothing)
+      - pdf2image     # OCR fallback for scanned PDFs (+ system poppler)
+      - pytesseract   # OCR fallback for scanned PDFs (+ system tesseract-ocr)
+      - streamlit     # deployable Streamlit app
   demo_data:
     - path: examples/demo_proposal.md
       description: Synthetic strong MSCA-PF proposal (rice drought genomics)
@@ -138,7 +141,8 @@ It does not write the proposal and does not review non-MSCA schemes.
 |--------|-----------|-------|---------|
 | Markdown / plain text | `.md` / `.markdown` / `.txt` | built-in | `examples/demo_proposal.md` |
 | Word document | `.docx` | parsed with the stdlib (no `python-docx` / Word needed) | — |
-| PDF | `.pdf` | needs `pip install pypdf` (or `pdfminer.six`) | — |
+| PDF (born-digital) | `.pdf` | needs `pip install pypdf` (or `pdfminer.six`) | — |
+| PDF (scanned/image) | `.pdf` | **OCR** auto-fallback: `pdf2image`+`pytesseract` + `tesseract-ocr`/`poppler` | — |
 | Legacy Word | `.doc` | **not supported** — re-save as `.docx`/PDF | — |
 
 Each should contain Sections 1 (Excellence), 2 (Impact), 3 (Implementation).
@@ -244,8 +248,10 @@ output_directory/
 
 **Required**: Python ≥3.10 standard library only — the panel, the `.docx` parser and the
 local web server (`app.py`, built on `http.server`) need no third-party packages.
-**Optional**: `pypdf` (or `pdfminer.six`) to read **PDF** proposals; `streamlit` for the
-deployable Streamlit app (`streamlit_app.py`). Both are listed in `requirements.txt`.
+**Optional**: `pypdf` (or `pdfminer.six`) to read **born-digital PDFs**; `pdf2image` +
+`pytesseract` (with `tesseract-ocr`/`poppler` system binaries) for **OCR of scanned PDFs**;
+`streamlit` for the deployable Streamlit app. All are listed in `requirements.txt`, with the
+system binaries in `packages.txt` for Streamlit Cloud.
 
 ## Gotchas
 
@@ -263,8 +269,11 @@ deployable Streamlit app (`streamlit_app.py`). Both are listed in `requirements.
   rubric to them. Refuse and say why.
 - **Gotcha 6**: PDF text extraction needs `pypdf`/`pdfminer.six`. If absent, the parser
   raises an actionable error rather than guessing — tell the user to `pip install pypdf` or
-  re-save as `.docx`/`.txt`. Scanned/image-only PDFs yield little text (no OCR); warn that a
-  low word count may reflect extraction, not the proposal.
+  re-save as `.docx`/`.txt`. Scanned/image-only PDFs are handled by **OCR auto-fallback**
+  (`ocr="auto"`): if a PDF yields < ~25 chars of text, OCR runs. OCR needs `pdf2image` +
+  `pytesseract` and the `tesseract-ocr`/`poppler` system binaries; when those are missing the
+  parser says so clearly. OCR is slower and accuracy depends on scan quality — a low word
+  count after OCR may reflect a poor scan, so sanity-check the page estimate.
 - **Gotcha 7**: `.docx` is read from `word/document.xml` only — text boxes, headers/footers
   and embedded objects are not extracted. For a faithful read prefer the body text or a
   `.md`/`.txt` export. Legacy binary `.doc` is unsupported (re-save as `.docx`).

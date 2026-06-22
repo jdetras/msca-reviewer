@@ -42,13 +42,13 @@ def _demo_text() -> str:
     return (APP_DIR / "examples" / "demo_proposal.md").read_text(encoding="utf-8")
 
 
-def _read_upload(upload) -> str:
+def _read_upload(upload, ocr: str = "auto") -> str:
     """Persist an uploaded file to a temp path and parse it with read_proposal()."""
     suffix = Path(upload.name).suffix or ".txt"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tf:
         tf.write(upload.getvalue())
         tmp = tf.name
-    return read_proposal(tmp)
+    return read_proposal(tmp, ocr=ocr)
 
 
 def render_result(result: dict, source: str) -> None:
@@ -133,6 +133,18 @@ def main() -> None:
     text: str | None = None
     source = ""
 
+    with st.sidebar:
+        st.header("Options")
+        ocr_label = st.selectbox(
+            "Scanned-PDF OCR",
+            ["Auto (OCR only if no text)", "Always OCR", "Never OCR"],
+            help="Scanned/image PDFs have no selectable text. OCR reads the page "
+                 "images instead (needs tesseract + poppler on the host).",
+        )
+        ocr_mode = {"Auto (OCR only if no text)": "auto",
+                    "Always OCR": "always",
+                    "Never OCR": "never"}[ocr_label]
+
     tab_upload, tab_paste = st.tabs(["📄 Upload a file", "✍️ Paste text"])
     with tab_upload:
         upload = st.file_uploader(
@@ -141,7 +153,8 @@ def main() -> None:
         )
         if upload is not None:
             try:
-                text = _read_upload(upload)
+                with st.spinner("Reading file…"):
+                    text = _read_upload(upload, ocr=ocr_mode)
                 source = upload.name
             except (ValueError, RuntimeError) as exc:
                 st.error(str(exc))
@@ -168,8 +181,8 @@ def main() -> None:
         render_result(result, source)
     elif text is None:
         st.info("Upload a `.md`, `.txt`, `.docx` or `.pdf` proposal, paste text, "
-                "or click **Try the demo**. PDF support needs `pypdf` (already in "
-                "`requirements.txt`).")
+                "or click **Try the demo**. Born-digital PDFs use `pypdf`; "
+                "scanned/image PDFs are OCR'd automatically (tesseract + poppler).")
 
 
 main()
