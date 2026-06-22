@@ -107,11 +107,12 @@ def test_pdf_without_backend_raises_clear_hint(tmp_path, monkeypatch):
 def test_pdf_roundtrip_if_backend_available(tmp_path):
     pytest.importorskip("pypdf")
     from pypdf import PdfWriter
-    # pypdf can't easily embed text; just assert parse_pdf returns a string and
-    # does not raise on a valid (empty) PDF.
+    # Verify the text-extraction path returns a string for a valid PDF. Use
+    # ocr="never" so a blank page (no embedded text) does not trigger the OCR
+    # fallback, which is intentionally unavailable in CI.
     writer = PdfWriter()
     writer.add_blank_page(width=200, height=200)
     p = tmp_path / "blank.pdf"
     with open(p, "wb") as fh:
         writer.write(fh)
-    assert isinstance(parse_pdf(p), str)
+    assert isinstance(parse_pdf(p, ocr="never"), str)
